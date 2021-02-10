@@ -1,17 +1,17 @@
-# Mapper Interactive
+# Mapper Stitching
 
 
 
-Mapper Interactive is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data  built upon the Mapper algorithm. It is an open source software released under the MIT License.
+<!-- Mapper Interactive is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data  built upon the Mapper algorithm. It is an open source software released under the MIT License. -->
 
-The Mapper algorithm is a tool from topological data analysis first introduced by Gurjeet Singh, Facundo Mémoli and Gunnar Carlsson in 2007 (http://dx.doi.org/10.2312/SPBG/SPBG07/091-100). 
+<!-- The Mapper algorithm is a tool from topological data analysis first introduced by Gurjeet Singh, Facundo Mémoli and Gunnar Carlsson in 2007 (http://dx.doi.org/10.2312/SPBG/SPBG07/091-100).  -->
 
 
 ## Installation
 
 ```bash
-git clone git@github.com:MapperInteractive/MapperInteractive.git
-cd MapperInteractive
+git clone git@github.com:tdavislab/mapper-stitching.git
+cd mapper-stitching
 python3 run.py
 ```
 
@@ -27,20 +27,16 @@ pip install scikit-learn
 pip install kmapper
 pip install networkx
 pip install flask
+pip install flask_assets
 ```
 
-To perform linear regression, please also make sure you have [statsmodels](https://www.statsmodels.org/stable/index.html) installed.
-```bash
-pip install statsmodels
-```
+<!-- ## Video -->
 
-## Video
+<!-- [![Screenshot of video](app/static/assets/video-teaser.png)](https://www.youtube.com/watch?v=z2VEkv1apF8) -->
 
-[![Screenshot of video](app/static/assets/video-teaser.png)](https://www.youtube.com/watch?v=z2VEkv1apF8)
+<!-- ## License -->
 
-## License
-
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+<!-- This project is licensed under the MIT License - see the `LICENSE` file for details. -->
 
 ## Contributing
 
@@ -48,7 +44,7 @@ Pull requests are welcomed.
 
 ## Cite
 
-Mapper Interactive: A Toolbox for the Visual Exploration of High-Dimensional Data. Youjia Zhou, Yaodong Zhao, Bei Wang. 2020.
+Stitch Fix for Mapper and Information Gains. Bala Krishnamoorthy, Nathaniel Saul, Bei Wang. 2021.
 
 
 

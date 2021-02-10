@@ -165,8 +165,6 @@ class Graph{
         });
     }
 
- 
-
     draw_color_legend(color_val){
         $('#color-legend-svg').remove();
         $('#block_body-inner_color').append('<svg width="0" height="0" id="color-legend-svg"></svg>');
@@ -267,54 +265,86 @@ class Graph{
     draw_all_mappers(){
         this.clear_mapper();
 
+        
         // init graph container
-        this.svg_width = $(d3.select(".viewer-graph__graph").node()).width();
-        this.svg_height = Math.max($(d3.select(".viewer-graph__graph").node()).height(), 750);
-        this.svg = d3.select("#graphSVG")
-            .attr("width", this.svg_width)
-            .attr("height", this.svg_height);
+        this.svg_container = d3.select("#graphSVG-container");
+        this.canvas_width = $(this.svg_container.node()).width();
+        this.canvas_height = d3.select("#workspace-graph").node().offsetHeight - 3*d3.select(".viewer-graph__toolbar").node().offsetHeight;
 
         let n = this.selected_cols.length;
-        let graph_margin = 20;
-        let padding = 15;
-        let graph_width = (this.svg_width - (n-1)*padding - 2*graph_margin) / n;
-        let graph_height = (this.svg_height - (n-1)*padding - 2*graph_margin) / n;
+        let padding = 10;
+        let graph_width = this.canvas_width / n;
+        let graph_height = (this.canvas_height - n*padding) / n;
 
-        // column labels
-        let label_g = this.svg.append("g").attr("id", "column-label-group");
-        for (let i=0; i<n; i++){
-            let x = i*graph_width + i*padding + graph_margin + graph_width/2;
-            let y = i*graph_height + i*padding + graph_margin + graph_height/2;
-            label_g.append("text")
-                .attr("x", x)
-                .attr("y", 14)
-                .text(this.selected_cols[i]);
-
-            label_g.append("text")
-                .attr("x", 8)
-                .attr("y", y)
-                .text(this.selected_cols[i]);
-
-        }
-
-        // graph containers
         for(let i=0; i<n; i++){
-            let y = i*graph_height + i*padding + graph_margin;
+            let row_container = this.svg_container.append("div").classed("row", true)
+                .style("padding", "10px 15px")
+                .style("padding-bottom", "0px");
             for(let j=0; j<n; j++){
-                let x = j*graph_width + j*padding + graph_margin;
-                let g = this.svg.append("g")
-                    .classed("graph", true)
-                    .attr("id", `graph${i}${j}`)
-                    .attr("transform", `translate(${x}, ${y})`);
-                g.append("rect")
+                let cell_container = row_container.append("div")
+                    .classed(`col-md-${Math.floor(12/n)}`, true)
+                    .classed("outline", true)
+                    .append("div").classed("graph-container", true);
+                let cell_svg = cell_container.append("svg")
+                    .attr("id", `graph_svg${i}${j}`)
                     .attr("width", graph_width)
-                    .attr("height", graph_height)
-                    .attr('fill', 'rgb(236,241,245)');
-                this.svg.append("g")
-                    .attr("id", `graph${i}${j}_entropy`)
-                    .attr("transform", `translate(${x}, ${y})`);
+                    .attr("height", graph_height);
+                cell_svg.append("g")
+                    .classed("graph", true)
+                    .attr("id", `graph${i}${j}`);
+                cell_svg.append("g")
+                    .attr("id", `graph${i}${j}_entropy`);
+                    
+                    // .attr("transform", `translate(${graph_margin}, ${graph_margin})`)
+                // cell_svg.append("rect")
+                // .attr("width", graph_width)
+                // .attr("height", graph_height)
+                // .attr('fill', 'rgb(236,241,245)');
             }
         }
+
+        
+        // this.svg = d3.select("#graphSVG")
+        //     .attr("width", this.svg_width)
+        //     .attr("height", this.svg_height);
+
+        
+
+        // column labels
+        // let label_g = this.svg.append("g").attr("id", "column-label-group");
+        // for (let i=0; i<n; i++){
+        //     let x = i*graph_width + i*padding + graph_margin + graph_width/2;
+        //     let y = i*graph_height + i*padding + graph_margin + graph_height/2;
+        //     label_g.append("text")
+        //         .attr("x", x)
+        //         .attr("y", 14)
+        //         .text(this.selected_cols[i]);
+
+        //     label_g.append("text")
+        //         .attr("x", 8)
+        //         .attr("y", y)
+        //         .text(this.selected_cols[i]);
+
+        // }
+
+        // graph containers
+        // for(let i=0; i<n; i++){
+        //     let y = i*graph_height + i*padding + graph_margin;
+        //     for(let j=0; j<n; j++){
+        //         let x = j*graph_width + j*padding + graph_margin;
+        //         let g = this.svg.append("g")
+        //             .classed("graph", true)
+        //             .attr("id", `graph${i}${j}`)
+        //             .attr("transform", `translate(${x}, ${y})`);
+        //         g.append("rect")
+        //             .attr("width", graph_width)
+        //             .attr("height", graph_height)
+        //             .attr('fill', 'rgb(236,241,245)');
+        //         this.svg.append("g")
+        //             .attr("id", `graph${i}${j}_entropy`)
+        //             .attr("transform", `translate(${x}, ${y})`);
+        //     }
+        // }
 
         this.col_index = {};
         this.col_index_reverse = {};
@@ -510,7 +540,7 @@ class Graph{
         let n =  entropy.length;
         let bar_width = 30;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width*3/4}, ${this.graph_height/4})`);
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-150}, ${this.graph_height/4})`);
         
         eg.append("text")
             .attr("x", bar_width+5)
@@ -592,7 +622,7 @@ class Graph{
         let n =  entropy_diff.length;
         let bar_width = 30;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width*3/4+30}, ${this.graph_height/4})`);
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-120}, ${this.graph_height/4})`);
 
         eg.append("text")
             .attr("x", bar_width+5)
@@ -657,12 +687,12 @@ class Graph{
             let col1 = this.col_index_reverse[parseInt(g.slice(0,1))];
             let col2 = this.col_index_reverse[parseInt(g.slice(1))];
             // 1. draw graph
-            d3.select("#graph"+g).call(d3.zoom().on("zoom", zoom_actions));
+            // d3.select("#graph"+g).call(d3.zoom().on("zoom", zoom_actions));
             let graph_g = d3.select("#graph"+g).append("g");
             let simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(function(d) { return d.id; }))
             .force("charge", d3.forceManyBody().strength(-200))
-            .force("center", d3.forceCenter(this.graph_width/2, this.graph_height/2))
+            .force("center", d3.forceCenter(this.graph_width/3, this.graph_height/2))
             .force("x", d3.forceX().strength(0.2))
             .force("y", d3.forceY().strength(0.2));
 
@@ -733,6 +763,13 @@ class Graph{
     
             simulation.force("link")
                 .links(links);
+
+            //add zoom capabilities
+            const zoom_handler = d3.zoom()
+                .on("zoom", zoom_actions);
+
+            // drag_handler(ng);
+            zoom_handler(d3.select("#graph_svg"+g));
             
             function ticked() {
                 lg
@@ -1268,8 +1305,8 @@ class Graph{
     }
 
     clear_mapper(){
-        $('#graphSVG').remove();
-        $('#graphSVG-container').append('<svg id="graphSVG"></svg>');
+        d3.select('#graphSVG-container').selectAll(".row").remove();
+        // $('#graphSVG-container').append('<svg id="graphSVG"></svg>');
         // $('#size_function_values').remove();
         // $('#size-function-container').append('<select class="custom-select"  name="size_function_values" id="size_function_values"></select>');
         // $('#color_function_values').remove();

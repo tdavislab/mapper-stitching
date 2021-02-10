@@ -75,7 +75,7 @@ class DataLoader{
                     this.selected_cols.push(d);
                     this.selectable_cols.splice(this.selectable_cols.indexOf(d),1);
                     this.draw_selected_cols();
-                    this.initialize_filter();
+                    // this.initialize_filter();
                 }
             });
     }
@@ -90,7 +90,7 @@ class DataLoader{
                     this.selected_cols.splice(this.selected_cols.indexOf(d),1);
                     this.selectable_cols.push(d);
                     this.draw_selected_cols();
-                    this.initialize_filter();
+                    // this.initialize_filter();
                     
                 } else {
                     alert("Please select at least 1 column!")

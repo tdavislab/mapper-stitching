@@ -26,13 +26,21 @@ div.tooltip {
 
 #workspace-graph {
     /* height: 700px; */
-    /*height: 91vh; */
+    height: 91vh;
     background-color:#FFF;
     border: 1px solid #C5CBD0;
     border-radius: 5px;
     -webkit-box-shadow: 1px 1px 2px 1px rgba(221, 221, 221, 0.7);
     -moz-box-shadow: 1px 1px 2px 1px rgba(221, 221, 221, 0.7);
     box-shadow: 1px 1px 2px 1px rgba(221, 221, 221, 0.7);
+}
+
+.graph-container {
+  background-color: rgb(236,241,245);
+  /* border-radius: 3px; */
+  margin: 0px 10px;
+  margin-top: 2px;
+  /* border: 1px solid rgb(224,224,224); */
 }
 
 .sidebar-container {
@@ -49,6 +57,11 @@ div.tooltip {
     padding: 0 10px;
     height: 30px;
     text-align: right;
+}
+
+.outline {
+  padding: 0px 0px;
+  margin: 0px;
 }
 
 .block {
