@@ -444,13 +444,23 @@ class Graph{
     compute_entropy(sub_graph, xdata, ydata){
         let entropies = {'entropy_dm':[], 'entropy_wi':[], 'entropy_am':[]};
         for(let i=0; i<sub_graph.length; i++){
-            let nodes = sub_graph[i].nodes.slice(0);
-            let links = sub_graph[i].links.slice(0);
+            // let nodes = sub_graph[i].nodes.slice(0);
+            // let links = sub_graph[i].links.slice(0);
+
+            let nodes = [];
+            let links = [];
+            sub_graph[i].nodes.forEach(node=>{
+                nodes.push(JSON.parse(JSON.stringify(node)));
+            })
+            sub_graph[i].links.forEach(link=>{
+                links.push(JSON.parse(JSON.stringify(link)));
+            })
+
 
             let nodes_idx = {};
             for(let i=0; i<nodes.length; i++){
                 nodes_idx[nodes[i].id] = i+1;
-                nodes[i].id_entity = nodes[i].id;
+                // nodes[i].id_entity = nodes[i].id;
                 nodes[i].id = i+1;
             }
             for(let edge of links){
@@ -538,9 +548,9 @@ class Graph{
     draw_entropy(g, entropy, mapper, col){
         let entropy_g = d3.select("#graph"+g+"_entropy");
         let n =  entropy.length;
-        let bar_width = 30;
+        let bar_width = this.graph_width/20;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-150}, ${this.graph_height/4})`);
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-5*bar_width}, ${this.graph_height/4})`);
         
         eg.append("text")
             .attr("x", bar_width+5)
@@ -582,7 +592,7 @@ class Graph{
         function mouseover(d, i){
             d3.select("#graph"+g).selectAll(".viewer-graph__vertex-group").classed("faded", true);
             mapper[that.subgraph_version][col][i].nodes.forEach(n=>{
-                d3.select("#node_"+g+"_"+n.id_entity).classed("faded", false);
+                d3.select("#node_"+g+"_"+n.id).classed("faded", false);
             })
             let coords = d3.mouse(this);
             d3.select("#tooltip"+g)
@@ -620,9 +630,9 @@ class Graph{
     draw_entropy_diff(g, entropy_diff){
         let entropy_g = d3.select("#graph"+g+"_entropy");
         let n =  entropy_diff.length;
-        let bar_width = 30;
+        let bar_width = this.graph_width/20;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-120}, ${this.graph_height/4})`);
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-4*bar_width}, ${this.graph_height/4})`);
 
         eg.append("text")
             .attr("x", bar_width+5)
@@ -636,7 +646,7 @@ class Graph{
         eg.selectAll("rect").data(entropy_diff)
             .enter().append("rect")
             .attr("class", "viewer-graph__rect")
-            .attr("id", (d,i)=>"rect_"+g+"_"+i)
+            .attr("id", (d,i)=>"rect2_"+g+"_"+i)
             .attr("x", bar_width)
             .attr("y", (d,i)=>i*bar_height+8)
             .attr("width", bar_width)
@@ -712,8 +722,9 @@ class Graph{
                     .on("end", dragended))
                 .on("mouseover", (d)=>{
                     d3.select("#graph"+g+"_entropy").selectAll(".viewer-graph__rect").classed("faded", true);
-                    d[this.subgraph_version].forEach(s=>{
+                    d[this.subgraph_version+col1].forEach(s=>{
                         d3.select("#rect_"+g+"_"+s).classed("faded", false);
+                        d3.select("#rect2_"+g+"_"+s).classed("faded", false);
                     })
                 })
                 .on("mouseout", ()=>{
@@ -735,7 +746,7 @@ class Graph{
             let pg = ng.append("g")
                 .attr("class", "pie-group");
             
-            pg.selectAll("path").data(d=>pie(prepare_pie_data(d[this.subgraph_version])))
+            pg.selectAll("path").data(d=>pie(prepare_pie_data(d[this.subgraph_version+col1])))
                 .enter().append("path")
                 .attr("d", d=>arc(d))
                 .attr("fill", d=>{

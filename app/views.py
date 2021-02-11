@@ -370,7 +370,7 @@ def get_subgraph_v1(col, col_name, mapper_graph):
                 sub_graphs[j]['nodes'].append(node)
                 nodes_idx[node['id']] = j
                 break
-    print(nodes_idx)
+    # print(nodes_idx)
     for i in range(len(mapper_graph['links'])):
         link = mapper_graph['links'][i]
         source_idx = nodes_idx[str(link['source'])]
@@ -381,7 +381,7 @@ def get_subgraph_v1(col, col_name, mapper_graph):
     # add subgroup info to nodes
     for i in range(len(mapper_graph['nodes'])):
         node = mapper_graph['nodes'][i]
-        node['sub_graphs_v1'] = [nodes_idx[node['id']]]
+        node['sub_graphs_v1'+col_name] = [nodes_idx[node['id']]]
 
     # compute dim0 PH for subgraphs
     for subgraph in sub_graphs:
@@ -390,6 +390,8 @@ def get_subgraph_v1(col, col_name, mapper_graph):
     return sub_graphs
 
 def get_subgraph_v2(col, col_name, mapper_graph):
+    print("subgraph_v2")
+    print(col_name)
     sub_graphs = []
     nodes_idx = {}
     cover_centers = mapper_graph['cover_centers'][col_name]
@@ -410,7 +412,6 @@ def get_subgraph_v2(col, col_name, mapper_graph):
                 sub_graphs[j]['nodes'].append(node)
                 nodes_idx[node['id']] = [j]
                 break
-    print(nodes_idx)
     links_idx = {}
     for i in range(len(cover_centers)):
         links_idx[i] = []
@@ -435,12 +436,26 @@ def get_subgraph_v2(col, col_name, mapper_graph):
             if link_id not in links_idx[tidx]:
                 sub_graphs[tidx]['links'].append(link)
                 links_idx[tidx].append(link_id)
+
+    # there might also be link between two nodes added from two different links
+    for i in range(len(sub_graphs)):
+        node_ids = []
+        for node in sub_graphs[i]['nodes']:
+            node_ids.append(node['id'])
+        for link in mapper_graph['links']:
+            if str(link['source']) in node_ids and str(link['target']) in node_ids:
+                print("new link",link)
+                link_id = str(link['source'])+"-"+str(link['target'])
+                if link_id not in links_idx[i]:
+                    sub_graphs[i]['links'].append(link)
+                    links_idx[i].append(link_id)
+    print(nodes_idx)
     print(links_idx)
 
     # add subgroup info to nodes
     for i in range(len(mapper_graph['nodes'])):
         node = mapper_graph['nodes'][i]
-        node['sub_graphs_v2'] = nodes_idx[node['id']]
+        node['sub_graphs_v2'+col_name] = nodes_idx[node['id']]
     
     # compute dim0 PH for subgraphs
     for subgraph in sub_graphs:
