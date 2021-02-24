@@ -29,10 +29,12 @@ class Graph{
         this.subgraphs = ['sub_graphs_v1', 'sub_graphs_v2'];
 
         this.toggle_subgraph_version();
+        this.toggle_entropy_value();
         this.get_all_measures();
         this.get_color_scales();
         this.color_functions();
         this.draw_all_mappers();
+        this.select_view();
 
 
 		// this.graphSvg.append('text')
@@ -83,6 +85,41 @@ class Graph{
         }
     }
 
+    toggle_entropy_value(){
+        if(d3.select("#entropy_values").property("checked")){
+            // show values
+            d3.selectAll(".entropy_value_text").style("visibility", "visible");
+        } else {
+            // hide values
+            d3.selectAll(".entropy_value_text").style("visibility", "hidden");
+        }
+        d3.select("#entropy_values").on("change", ()=>{
+            if(d3.select("#entropy_values").property("checked")){
+                // show values
+                d3.selectAll(".entropy_value_text").style("visibility", "visible");
+            } else {
+                // hide values
+                d3.selectAll(".entropy_value_text").style("visibility", "hidden");
+            }
+        })
+    }
+
+    select_view(){
+        d3.select("#graph_view").classed("selected", true);
+        d3.select("#graph_view")
+            .on("click", ()=>{
+                d3.selectAll(".viewer-graph__toolbar-item").classed("selected", false);
+                d3.select("#graph_view").classed("selected", true);
+                this.draw_all_mappers();
+            })
+        d3.select("#scatter_matrix_view")
+            .on("click", ()=>{
+                d3.selectAll(".viewer-graph__toolbar-item").classed("selected", false);
+                d3.select("#scatter_matrix_view").classed("selected", true);
+                this.draw_all_mappers("scatter_matrix");
+            })
+    }
+
     get_color_scales(){
         let entropy_dm = [];
         let entropy_wi = [];
@@ -115,26 +152,61 @@ class Graph{
         });
 
         // range = [min, max];
-        let entropy_dm_range = [Math.floor(Math.min(...entropy_dm)), Math.ceil(Math.max(...entropy_dm))];
+        // let entropy_dm_range = [Math.floor(Math.min(...entropy_dm)), Math.ceil(Math.max(...entropy_dm))];
+        let entropy_dm_range = [Math.floor(Math.min(...entropy_dm)*10)/10, Math.ceil(Math.max(...entropy_dm))+0.5];
         let entropy_wi_range = [Math.floor(Math.min(...entropy_wi)), Math.ceil(Math.max(...entropy_wi))];
-        let entropy_am_range = [Math.floor(Math.min(...entropy_am)), Math.ceil(Math.max(...entropy_am))];
+        let entropy_am_range = [Math.floor(Math.min(...entropy_am)*10)/10, Math.ceil(Math.max(...entropy_am))+0.5];
         let ph0_range = [Math.floor(Math.min(...ph0)), Math.ceil(Math.max(...ph0))];
 
-        let dm_scale = d3.scaleSequential(d3.interpolateOrRd).domain(entropy_dm_range);
+        // let dm_scale = d3.scaleSequential(d3.interpolateOrRd).domain(entropy_dm_range);
+        let dm_scale = d3.scaleSequential(function(t){
+            // let dt = Math.min((entropy_dm_range[1] - entropy_dm_range[0])/5, 0.3);
+            let dt = 0.3
+            return d3.interpolateOrRd(t+dt);
+            })
+            .domain(entropy_dm_range);
         let wi_scale = d3.scaleSequential(d3.interpolateOrRd).domain(entropy_wi_range);
-        let am_scale = d3.scaleSequential(d3.interpolateOrRd).domain(entropy_am_range);
-        let ph0_scale = d3.scaleSequential(d3.interpolateOrRd).domain(ph0_range);
+        let am_scale = d3.scaleSequential(function(t){
+            // let dt = Math.min((entropy_dm_range[1] - entropy_dm_range[0])/5, 0.3);
+            let dt = 0.3
+            return d3.interpolateOrRd(t+dt);
+            })
+            .domain(entropy_am_range);
+        let ph0_scale = d3.scaleOrdinal(d3.schemeReds[Math.ceil(Math.max(...ph0))]);
+        this.ph0_scale_dict = {};
+        for(let i=1; i<=Math.ceil(Math.max(...ph0)); i++){
+            this.ph0_scale_dict[i] = ph0_scale(i);
+        }
+        // let ph0_scale = d3.scaleSequential(d3.interpolateOrRd).domain(ph0_range);
+        // let ph0_scale = d3.scaleOrdinal(d3.schemeReds[ph0_range[1]]).domain(ph0_range);
         this.measures_color_scales = {"entropy_dm": dm_scale, "entropy_wi": wi_scale, "entropy_am": am_scale, "ph0":ph0_scale};
 
-        let entropy_dm_diff_range = [Math.floor(Math.min(...entropy_dm_diff)), Math.ceil(Math.max(...entropy_dm_diff))];
+        let entropy_dm_diff_range = [Math.floor(Math.min(...entropy_dm_diff)*10)/10, Math.ceil(Math.max(...entropy_dm_diff))+0.5];
         let entropy_wi_diff_range = [Math.floor(Math.min(...entropy_wi_diff)), Math.ceil(Math.max(...entropy_wi_diff))];
-        let entropy_am_diff_range = [Math.floor(Math.min(...entropy_am_diff)), Math.ceil(Math.max(...entropy_am_diff))];
+        let entropy_am_diff_range = [Math.floor(Math.min(...entropy_am_diff)*10)/10, Math.ceil(Math.max(...entropy_am_diff))+0.5];
         let ph0_diff_range = [Math.floor(Math.min(...ph0_diff)), Math.ceil(Math.max(...ph0_diff))];
 
-        let dm_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(entropy_dm_diff_range);
+        let dm_diff_scale = d3.scaleSequential(function(t){
+            // let dt = Math.min((entropy_dm_diff_range[1] - entropy_dm_diff_range[0])/3, 0.3);
+            let dt = 0.3;
+            return d3.interpolateGnBu(t+dt);
+            })
+            .domain(entropy_dm_diff_range);
         let wi_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(entropy_wi_diff_range);
-        let am_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(entropy_am_diff_range);
-        let ph0_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(ph0_diff_range);
+        let am_diff_scale = d3.scaleSequential(function(t){
+            // let dt = Math.min((entropy_dm_diff_range[1] - entropy_dm_diff_range[0])/3, 0.3);
+            let dt = 0.3;
+            return d3.interpolateGnBu(t+dt);
+            })
+            .domain(entropy_am_diff_range);
+        
+        let ph0_diff_val = Math.max(ph0_diff_range[1] - ph0_diff_range[0], 3);
+
+        let ph0_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph0_diff_val]);
+        this.ph0_diff_scale_dict = {};
+        for(let i=Math.floor(Math.min(...ph0_diff)); i<=Math.ceil(Math.max(...ph0_diff)); i++){
+            this.ph0_diff_scale_dict[i] = ph0_diff_scale(i+1-Math.floor(Math.min(...ph0_diff)));
+        }
         this.measures_diff_color_scales = {"entropy_dm": dm_diff_scale, "entropy_wi": wi_diff_scale, "entropy_am": am_diff_scale, "ph0":ph0_diff_scale};
 
     }
@@ -143,10 +215,19 @@ class Graph{
         let that=this;
         let value_dropdown = document.getElementById("color_function_values");
         this.measure_id = this.measures_label2id[value_dropdown.options[value_dropdown.selectedIndex].text];
-        this.draw_color_legend(this.measure_id);
+        // this.draw_color_legend(this.measure_id);
+        if(this.measure_id === "ph0"){
+            this.draw_color_legend_categorical(this.ph0_scale_dict, this.ph0_diff_scale_dict);
+        } else{
+            this.draw_color_legend(this.measure_id);   
+        }
         value_dropdown.onchange = function(){
             that.measure_id = that.measures_label2id[value_dropdown.options[value_dropdown.selectedIndex].text];
-            that.draw_color_legend(that.measure_id);   
+            if(that.measure_id === "ph0"){
+                that.draw_color_legend_categorical(that.ph0_scale_dict, that.ph0_diff_scale_dict);
+            } else{
+                that.draw_color_legend(that.measure_id);   
+            }
             that.draw_all_mappers();
         }
 
@@ -160,8 +241,7 @@ class Graph{
             } else{ // this.map_type === "map-continuous"
                 this.draw_color_legend(this.measure_id);
             }
-            this.draw_all_mappers();
-            
+            this.draw_all_mappers();     
         });
     }
 
@@ -236,9 +316,6 @@ class Graph{
             .attr('height',colorTileHeight)
             .attr('fill', d=>color_scale2(d));
 
-
-
-
         // for(let i=0; i<Object.keys(color_scales).length; i++){
         //     let color_scale = color_scales[Object.keys(color_scales)[i]];
         //     let axisDomain = color_scale.domain();
@@ -262,10 +339,9 @@ class Graph{
         // };
     }
 
-    draw_all_mappers(){
+    draw_all_mappers(plot_type="mapper_graph"){
         this.clear_mapper();
 
-        
         // init graph container
         this.svg_container = d3.select("#graphSVG-container");
         this.canvas_width = $(this.svg_container.node()).width();
@@ -279,13 +355,37 @@ class Graph{
         for(let i=0; i<n; i++){
             let row_container = this.svg_container.append("div").classed("row", true)
                 .style("padding", "10px 15px")
+                .style("padding-left", "30px")
                 .style("padding-bottom", "0px");
+            row_container.append("div")
+                // .style("position", "relative")
+                // .style("z-index", 1000)
+                .attr("id", `column${i}`)
+                .style("float", "left")
+                // .style("padding-top", `${graph_height/2}px`)
+                .style("padding-left", "0px")
+                .style("padding-right", "10px")
+                .style("width", "1%");
             for(let j=0; j<n; j++){
                 let cell_container = row_container.append("div")
-                    .classed(`col-md-${Math.floor(12/n)}`, true)
-                    .classed("outline", true)
-                    .append("div").classed("graph-container", true);
-                let cell_svg = cell_container.append("svg")
+                    // .classed(`col-${Math.floor(12/n)}`, true)
+                    .style("float", "left")
+                    .style("width", `${98/n}%`)
+                    .classed("outline", true);
+                if(i===0){
+                    cell_container.append("div")
+                        .classed("column_title", true)
+                        .html(this.selected_cols[j]);
+                }
+                if(j===0){
+                    d3.select(`#column${i}`)
+                        .style("padding-top", `${graph_height/2+5*this.selected_cols[i].length}px`)
+                        .append("div")
+                        .classed("rotated_text", true)
+                        .html(this.selected_cols[i]);
+                }
+                let graph_container = cell_container.append("div").classed("graph-container", true);
+                let cell_svg = graph_container.append("svg")
                     .attr("id", `graph_svg${i}${j}`)
                     .attr("width", graph_width)
                     .attr("height", graph_height);
@@ -294,57 +394,8 @@ class Graph{
                     .attr("id", `graph${i}${j}`);
                 cell_svg.append("g")
                     .attr("id", `graph${i}${j}_entropy`);
-                    
-                    // .attr("transform", `translate(${graph_margin}, ${graph_margin})`)
-                // cell_svg.append("rect")
-                // .attr("width", graph_width)
-                // .attr("height", graph_height)
-                // .attr('fill', 'rgb(236,241,245)');
             }
         }
-
-        
-        // this.svg = d3.select("#graphSVG")
-        //     .attr("width", this.svg_width)
-        //     .attr("height", this.svg_height);
-
-        
-
-        // column labels
-        // let label_g = this.svg.append("g").attr("id", "column-label-group");
-        // for (let i=0; i<n; i++){
-        //     let x = i*graph_width + i*padding + graph_margin + graph_width/2;
-        //     let y = i*graph_height + i*padding + graph_margin + graph_height/2;
-        //     label_g.append("text")
-        //         .attr("x", x)
-        //         .attr("y", 14)
-        //         .text(this.selected_cols[i]);
-
-        //     label_g.append("text")
-        //         .attr("x", 8)
-        //         .attr("y", y)
-        //         .text(this.selected_cols[i]);
-
-        // }
-
-        // graph containers
-        // for(let i=0; i<n; i++){
-        //     let y = i*graph_height + i*padding + graph_margin;
-        //     for(let j=0; j<n; j++){
-        //         let x = j*graph_width + j*padding + graph_margin;
-        //         let g = this.svg.append("g")
-        //             .classed("graph", true)
-        //             .attr("id", `graph${i}${j}`)
-        //             .attr("transform", `translate(${x}, ${y})`);
-        //         g.append("rect")
-        //             .attr("width", graph_width)
-        //             .attr("height", graph_height)
-        //             .attr('fill', 'rgb(236,241,245)');
-        //         this.svg.append("g")
-        //             .attr("id", `graph${i}${j}_entropy`)
-        //             .attr("transform", `translate(${x}, ${y})`);
-        //     }
-        // }
 
         this.col_index = {};
         this.col_index_reverse = {};
@@ -357,20 +408,26 @@ class Graph{
         this.graph_width = graph_width;
         this.graph_height = graph_height;
 
-        // let color_scale_categorical = d3.scaleOrdinal(d3.schemeCategory10);
-        let color_scale_categorical = d3.scaleOrdinal(d3.schemeTableau10);
-        this.all_mappers.forEach(mapper=>{
-            this.subgraphs.forEach(subg=>{
-                mapper[subg].color_dict = {};
-                mapper.vars.forEach(v=>{
-                    mapper[subg].color_dict[v] = [];
-                    for(let i=0; i<mapper[subg][v].length; i++){
-                        mapper[subg].color_dict[v].push(color_scale_categorical(i));
-                    }
+        if(plot_type === "mapper_graph"){
+            // let color_scale_categorical = d3.scaleOrdinal(d3.schemeCategory10);
+            let color_scale_categorical = d3.scaleOrdinal(d3.schemeTableau10);
+            this.all_mappers.forEach(mapper=>{
+                this.subgraphs.forEach(subg=>{
+                    mapper[subg].color_dict = {};
+                    mapper.vars.forEach(v=>{
+                        mapper[subg].color_dict[v] = [];
+                        for(let i=0; i<mapper[subg][v].length; i++){
+                            mapper[subg].color_dict[v].push(color_scale_categorical(i));
+                        }
+                    })
                 })
+                this.draw_mapper(mapper);
             })
-            this.draw_mapper(mapper);
-        })
+        } else if(plot_type === "scatter_matrix"){
+            console.log("scatter_matrix")
+            this.draw_scatter_plot();
+        }
+        
     }
 
     get_all_measures(){
@@ -527,33 +584,15 @@ class Graph{
         return entropies;
     }
 
-    // text_entropy(g, entropy){
-    //     var f = d3.format(".2f");
-    //     for(let i=0; i<Object.keys(entropy).length; i++){
-    //         let e = entropy[Object.keys(entropy)[i]];
-    //         g.append('text')
-    //         .attr('x', i*20 + 40)
-    //         .attr('y',20)
-    //         .text(`Entropy ${(Object.keys(entropy)[i])}`)
-    //         for(let j=0; j<e.length; j++){
-    //            g.append('text')
-    //                 .attr('x', i*20 + 40)
-    //             .attr('y', j*20+40)
-    //             .text(f(e[j]))
-
-    //         }
-    //     }
-    // }
-
     draw_entropy(g, entropy, mapper, col){
         let entropy_g = d3.select("#graph"+g+"_entropy");
         let n =  entropy.length;
         let bar_width = this.graph_width/20;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-5*bar_width}, ${this.graph_height/4})`);
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-6*bar_width}, ${this.graph_height/4})`);
         
         eg.append("text")
-            .attr("x", bar_width+5)
+            .attr("x", bar_width)
             .text(()=>{
                 if(this.measure_id === "ph0"){
                     return "LH";
@@ -561,12 +600,17 @@ class Graph{
                     return "LE";
                 }
             });
-        eg.selectAll("rect").data(entropy)
-            .enter().append("rect")
+        
+        let eg_g = eg.selectAll("g").data(entropy)
+            .enter().append("g")
+            .attr("transform", (d,i)=>`translate(${bar_width}, ${i*bar_height+8})`)
+        // eg.selectAll("rect").data(entropy)
+            // .enter().append("rect")
+        eg_g.append("rect")
             .attr("class", "viewer-graph__rect")
             .attr("id", (d,i)=>"rect_"+g+"_"+i)
-            .attr("x", bar_width)
-            .attr("y", (d,i)=>i*bar_height+8)
+            // .attr("x", bar_width)
+            // .attr("y", (d,i)=>i*bar_height+8)
             .attr("width", bar_width)
             .attr("height", bar_height)
             .attr("fill", (d,i)=>{
@@ -580,6 +624,12 @@ class Graph{
             // .on("click", mouseover)
             .on("mouseover", mouseover)
             .on("mouseout", mouseout);
+        eg_g.append("text")
+            .classed("entropy_value_text", true)
+            .attr("x", -bar_width*1.5)
+            .attr("y", bar_height*2/3)
+            .text(d=>d)
+            .style("visibility", "hidden");
         eg.append("text")
             // .attr("class", "tooltip")
             .attr("id", "tooltip"+g)
@@ -632,7 +682,7 @@ class Graph{
         let n =  entropy_diff.length;
         let bar_width = this.graph_width/20;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-4*bar_width}, ${this.graph_height/4})`);
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-5*bar_width}, ${this.graph_height/4})`);
 
         eg.append("text")
             .attr("x", bar_width+5)
@@ -643,18 +693,35 @@ class Graph{
                     return "LED";
                 }
             });
-        eg.selectAll("rect").data(entropy_diff)
-            .enter().append("rect")
+        let eg_g = eg.selectAll("g").data(entropy_diff)
+            .enter().append("g")
+            .attr("transform", (d,i)=>`translate(${bar_width}, ${i*bar_height+8})`)
+        // eg.selectAll("rect").data(entropy_diff)
+            // .enter().append("rect")
+        eg_g.append("rect")
             .attr("class", "viewer-graph__rect")
             .attr("id", (d,i)=>"rect2_"+g+"_"+i)
-            .attr("x", bar_width)
-            .attr("y", (d,i)=>i*bar_height+8)
+            // .attr("x", bar_width)
+            // .attr("y", (d,i)=>i*bar_height+8)
             .attr("width", bar_width)
             .attr("height", bar_height)
-            .attr("fill", d=>this.measures_diff_color_scales[this.measure_id](d))
+            .attr("fill", d=>{
+                if(this.measure_id==="ph0"){
+                    return this.ph0_diff_scale_dict[parseInt(d)];
+                } else{
+                    return this.measures_diff_color_scales[this.measure_id](d);
+                }
+            })
             .attr("stroke", "grey")
             .on("mouseover", mouseover)
             .on("mouseout", mouseout);
+
+        eg_g.append("text")
+            .classed("entropy_value_text", true)
+            .attr("x", bar_width*4/3)
+            .attr("y", bar_height*2/3)
+            .text(d=>d)
+            .style("visibility", "hidden");
 
         eg.append("text")
             // .attr("class", "tooltip")
@@ -671,7 +738,63 @@ class Graph{
         function mouseout(){
             d3.select("#tooltip_diff"+g).style("visibility", "hidden");
         }
-        
+    }
+
+    draw_scatter_plot(){
+        let group_id = [];
+        for(let i=0; i<this.selected_cols.length; i++){
+            for(let j=0; j<this.selected_cols.length; j++){
+                let v1 = this.selected_cols[i];
+                let v2 = this.selected_cols[j];
+                let v1_idx = this.col_index[v1];
+                let v2_idx = this.col_index[v2];
+                group_id.push(`${v1_idx}${v2_idx}`);
+            }
+        }
+
+        group_id.forEach(g=>{
+            let col1 = this.col_index_reverse[parseInt(g.slice(0,1))];
+            let col2 = this.col_index_reverse[parseInt(g.slice(1))];
+
+            let graph_g = d3.select("#graph"+g).append("g");
+            let margin = 40;
+            if(col1 === col2){
+                // text col_name
+                graph_g.append("text")
+                    .attr("transform", `translate(${this.graph_width/2-margin-5*col1.length}, ${this.graph_height/2})`)
+                    .style("font-size", "30px")
+                    .text(col1);
+            } else {
+                // draw scatter plot
+                console.log(col1, col2)
+                let x_val = Object.values(this.raw_data[col1]);
+                let y_val = Object.values(this.raw_data[col2]);
+                let pt_val = [];
+                let x_scale = d3.scaleLinear()
+                    .domain([Math.min(...x_val), Math.max(...x_val)])
+                    .range([2*margin, this.graph_width-3*margin])
+                let y_scale = d3.scaleLinear()
+                    .domain([Math.min(...y_val), Math.max(...y_val)])
+                    .range([this.graph_height-margin, margin])
+                for(let i=0; i<x_val.length; i++){
+                    pt_val.push({"x":x_val[i], "y":y_val[i]});
+                }
+                let ng = graph_g.selectAll("circle").data(pt_val)
+                    .enter().append("circle")
+                    .attr("cx", d=>x_scale(d.x))
+                    .attr("cy", d=>y_scale(d.y))
+                    .attr("r", 1)
+                    .attr("fill", "none") 
+                    .attr("stroke", "black")
+                    .style("opacity", 0.8);
+                let x_axis = d3.axisBottom(x_scale).ticks(Math.floor(10/this.selected_cols.length));
+                let y_axis = d3.axisLeft(y_scale).ticks(Math.floor(10/this.selected_cols.length)); 
+                graph_g.append("g").attr("transform",  `translate(0, ${this.graph_height-margin})`).call(x_axis);
+                // graph_g.append("text").attr("transform",  `translate(${this.graph_width/2-margin+col1.length}, ${this.graph_height-5})`).text(col1);
+                graph_g.append("g").attr("transform",  `translate(${2*margin}, 0)`).call(y_axis);
+                // graph_g.append("text").attr("transform",  `translate(${margin/2+10}, ${this.graph_height/2+2*col2.length}) rotate(270)`).text(col2);
+            }
+        })
     }
 
     draw_mapper(mapper){
@@ -1151,7 +1274,7 @@ class Graph{
     //         .attr('fill', d=>color_scale(d));
     // }
 
-    draw_color_legend_categorical(color_dict){
+    draw_color_legend_categorical(color_dict, color_dict2){
         // reset svg 
         $('#color-legend-svg').remove();
         $('#block_body-inner_color').append('<svg width="0" height="0" id="color-legend-svg"></svg>');
@@ -1159,18 +1282,21 @@ class Graph{
         let color_array = d3.entries(color_dict);
         let width = $(d3.select("#workspace-color_functions").node()).width();
         let margin = 10;
-        let rect_height = 10;
-        let rect_width = 25;
+        let rect_height = 15;
+        let rect_width = 30;
         let rect_margin = 8;
+        let textWidth = 30;
         let height = color_array.length*(rect_height+rect_margin)+margin*2;
-        let svg = d3.select("#color-legend-svg").attr('width', width).attr('height', height);
+        let svg = d3.select("#color-legend-svg").attr('width', width).attr('height', height*2);
 
         console.log(color_array)
+
+        svg.append("text").attr("transform", `translate(0,${2*margin})`).text("LH");
 
         let lg = svg.selectAll("g").data(color_array);
         lg.exit().remove();
         lg = lg.enter().append("g").merge(lg)
-            .attr("transform", "translate("+margin+","+margin+")")
+            .attr("transform", "translate("+(margin+textWidth)+","+margin+")")
         lg.append("rect")
             .attr("x",0)
             .attr("y",(d,i)=>i*(rect_height+rect_margin))
@@ -1180,6 +1306,25 @@ class Graph{
             .style("opacity", 0.8);
 
         lg.append("text")
+            .attr("x", rect_width+margin*3)
+            .attr("y", (d,i)=>i*(rect_height+rect_margin)+8)
+            .text(d=>d.key);
+
+        svg.append("text").attr("transform", `translate(0,${height+2*margin})`).text("LHD");
+        let color_array2 = d3.entries(color_dict2);
+        let lg2 = svg.append("g").selectAll("g").data(color_array2);
+        lg2.exit().remove();
+        lg2 = lg2.enter().append("g").merge(lg2)
+            .attr("transform", "translate("+(margin+textWidth)+","+(margin+height)+")")
+        lg2.append("rect")
+            .attr("x",0)
+            .attr("y",(d,i)=>i*(rect_height+rect_margin))
+            .attr("height", rect_height)
+            .attr("width",rect_width)
+            .attr("fill", d=>d.value)
+            .style("opacity", 0.8);
+
+        lg2.append("text")
             .attr("x", rect_width+margin*3)
             .attr("y", (d,i)=>i*(rect_height+rect_margin)+8)
             .text(d=>d.key);
@@ -1327,122 +1472,122 @@ class Graph{
         // $('#color-legend-svg').remove();
     }
 
-    selection_nodes(){
-        d3.select("#unselect-view")
-            .on("click",()=>{
-                this.select_view();
-            })
-        d3.select("#select-node")
-            .on("click",()=>{
-                this.select_node();
-            })
-        d3.select("#select-cluster")
-            .on("click", ()=>{
-                this.select_cluster();
-            })
-        d3.select("#select-path")
-            .on("click", ()=>{
-                this.select_path();
-            })
-    }
+    // selection_nodes(){
+    //     d3.select("#unselect-view")
+    //         .on("click",()=>{
+    //             this.select_view();
+    //         })
+    //     d3.select("#select-node")
+    //         .on("click",()=>{
+    //             this.select_node();
+    //         })
+    //     d3.select("#select-cluster")
+    //         .on("click", ()=>{
+    //             this.select_cluster();
+    //         })
+    //     d3.select("#select-path")
+    //         .on("click", ()=>{
+    //             this.select_path();
+    //         })
+    // }
 
-    select_node(){
-		console.log( this) 
-        if(!this.if_select_node){
-            d3.selectAll(".viewer-graph__vertex").classed("selected",false);
-            d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
-            d3.selectAll(".viewer-graph__edge").classed("selected", false);
-        }
-        this.selected_nodes = [];
-        this.if_select_node = true;
-		console.log( this.if_select_node) 
-        d3.select("#select-node").classed("selected", true);
-        d3.select("#unselect-view").classed("selected", false);
-        this.if_select_cluster = false;
-        d3.select("#select-cluster").classed("selected", false);
-        this.if_select_path = false;
-        d3.select("#select-path").classed("selected", false);
-        d3.selectAll(".viewer-graph__vertex").classed("selected",false);
-        d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
-        d3.selectAll(".viewer-graph__edge").classed("selected", false);
-        if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
-            this.fill_vertex(this.color_col);
-        } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
-            let color_dict = this.fill_vertex_categorical(this.color_col);
-        }
-    }
+    // select_node(){
+	// 	console.log( this) 
+    //     if(!this.if_select_node){
+    //         d3.selectAll(".viewer-graph__vertex").classed("selected",false);
+    //         d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
+    //         d3.selectAll(".viewer-graph__edge").classed("selected", false);
+    //     }
+    //     this.selected_nodes = [];
+    //     this.if_select_node = true;
+	// 	console.log( this.if_select_node) 
+    //     d3.select("#select-node").classed("selected", true);
+    //     d3.select("#unselect-view").classed("selected", false);
+    //     this.if_select_cluster = false;
+    //     d3.select("#select-cluster").classed("selected", false);
+    //     this.if_select_path = false;
+    //     d3.select("#select-path").classed("selected", false);
+    //     d3.selectAll(".viewer-graph__vertex").classed("selected",false);
+    //     d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
+    //     d3.selectAll(".viewer-graph__edge").classed("selected", false);
+    //     if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
+    //         this.fill_vertex(this.color_col);
+    //     } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
+    //         let color_dict = this.fill_vertex_categorical(this.color_col);
+    //     }
+    // }
 
-    select_cluster(){
-        if(!this.if_select_cluster){
-            d3.selectAll(".viewer-graph__vertex").classed("selected",false);
-            d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
-            d3.selectAll(".viewer-graph__edge").classed("selected", false);
-        }
-        this.selected_nodes = [];
-        this.if_select_cluster = true;
-        d3.select("#select-cluster").classed("selected", true);
-        d3.select("#unselect-view").classed("selected", false);
-        this.if_select_node = false;
-        d3.select("#select-node").classed("selected", false);
-        this.if_select_path = false;
-        d3.select("#select-path").classed("selected", false);
-        d3.selectAll(".viewer-graph__vertex").classed("selected",false);
-        d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
-        d3.selectAll(".viewer-graph__edge").classed("selected", false);
-        if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
-            this.fill_vertex(this.color_col);
-        } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
-            let color_dict = this.fill_vertex_categorical(this.color_col);
-        }
-    }
+    // select_cluster(){
+    //     if(!this.if_select_cluster){
+    //         d3.selectAll(".viewer-graph__vertex").classed("selected",false);
+    //         d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
+    //         d3.selectAll(".viewer-graph__edge").classed("selected", false);
+    //     }
+    //     this.selected_nodes = [];
+    //     this.if_select_cluster = true;
+    //     d3.select("#select-cluster").classed("selected", true);
+    //     d3.select("#unselect-view").classed("selected", false);
+    //     this.if_select_node = false;
+    //     d3.select("#select-node").classed("selected", false);
+    //     this.if_select_path = false;
+    //     d3.select("#select-path").classed("selected", false);
+    //     d3.selectAll(".viewer-graph__vertex").classed("selected",false);
+    //     d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
+    //     d3.selectAll(".viewer-graph__edge").classed("selected", false);
+    //     if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
+    //         this.fill_vertex(this.color_col);
+    //     } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
+    //         let color_dict = this.fill_vertex_categorical(this.color_col);
+    //     }
+    // }
 
-    select_path(){
-        if(!this.if_select_path){
-            d3.selectAll(".viewer-graph__vertex").classed("selected",false);
-            d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
-            d3.selectAll(".viewer-graph__edge").classed("selected", false);
-        }
-        this.selected_nodes = [];
-        this.selectable_nodes = [];
-        this.nodes.forEach(node=>{
-            this.selectable_nodes.push(node.id);
-        })
-        this.if_select_path = true;
-        d3.select("#select-path").classed("selected", true);
-        d3.select("#unselect-view").classed("selected", false);
-        this.if_select_node = false;
-        d3.select("#select-node").classed("selected", false);
-        this.if_select_cluster = false;
-        d3.select("#select-cluster").classed("selected", false);
-        if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
-            this.fill_vertex(this.color_col);
-        } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
-            let color_dict = this.fill_vertex_categorical(this.color_col);
-        }
-    }
+    // select_path(){
+    //     if(!this.if_select_path){
+    //         d3.selectAll(".viewer-graph__vertex").classed("selected",false);
+    //         d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
+    //         d3.selectAll(".viewer-graph__edge").classed("selected", false);
+    //     }
+    //     this.selected_nodes = [];
+    //     this.selectable_nodes = [];
+    //     this.nodes.forEach(node=>{
+    //         this.selectable_nodes.push(node.id);
+    //     })
+    //     this.if_select_path = true;
+    //     d3.select("#select-path").classed("selected", true);
+    //     d3.select("#unselect-view").classed("selected", false);
+    //     this.if_select_node = false;
+    //     d3.select("#select-node").classed("selected", false);
+    //     this.if_select_cluster = false;
+    //     d3.select("#select-cluster").classed("selected", false);
+    //     if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
+    //         this.fill_vertex(this.color_col);
+    //     } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
+    //         let color_dict = this.fill_vertex_categorical(this.color_col);
+    //     }
+    // }
 
-    select_view(){
-        this.selected_nodes = [];
-        d3.select("#unselect-view").classed("selected", true);
-        this.if_select_node = false;
-        d3.select("#select-node").classed("selected", false);
-        this.if_select_cluster = false;
-        d3.select("#select-cluster").classed("selected", false);
-        this.if_select_path = false;
-        d3.select("#select-path").classed("selected", false);
-        d3.selectAll(".viewer-graph__vertex").classed("selected", false);
-        this.remove_hist();
-        d3.selectAll(".viewer-graph__vertex").classed("selected",false);
-        d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
-        d3.selectAll(".viewer-graph__edge").classed("selected", false);
-        if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
-            this.fill_vertex(this.color_col);
-        } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
-            let color_dict = this.fill_vertex_categorical(this.color_col);
-        }
-        this.text_cluster_details([], this.label_column, this.labels);
+    // select_view(){
+    //     this.selected_nodes = [];
+    //     d3.select("#unselect-view").classed("selected", true);
+    //     this.if_select_node = false;
+    //     d3.select("#select-node").classed("selected", false);
+    //     this.if_select_cluster = false;
+    //     d3.select("#select-cluster").classed("selected", false);
+    //     this.if_select_path = false;
+    //     d3.select("#select-path").classed("selected", false);
+    //     d3.selectAll(".viewer-graph__vertex").classed("selected", false);
+    //     this.remove_hist();
+    //     d3.selectAll(".viewer-graph__vertex").classed("selected",false);
+    //     d3.selectAll(".viewer-graph__vertex").classed("unselectable",false);
+    //     d3.selectAll(".viewer-graph__edge").classed("selected", false);
+    //     if(this.col_keys.indexOf(this.color_col)!=-1 || this.color_col==="Number of points"){
+    //         this.fill_vertex(this.color_col);
+    //     } else if(this.categorical_cols.indexOf(this.color_col)!=-1){
+    //         let color_dict = this.fill_vertex_categorical(this.color_col);
+    //     }
+    //     this.text_cluster_details([], this.label_column, this.labels);
 
-    }
+    // }
 
     draw_hist(){
         this.remove_hist();

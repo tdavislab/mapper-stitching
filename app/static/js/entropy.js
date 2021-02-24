@@ -9,17 +9,26 @@ function distanceMatrix(weight) {
 	var distanceSum = {}
 	var jSpheres = {}
 	var sd = cy.elements().floydWarshall({weight: weight})
+	var sd2 = cy.elements().floydWarshall()
 	for (let n of cy.nodes()) {
 		let id = n.id();
 		jSpheres[id] = {}
 		for (let m of cy.nodes()) {
 			d = sd.distance(n, m)
-			if (d > 0 && d != Infinity) {
-				if (matrix[d]) {
-					matrix[d] += 1
+			let d2 = sd2.distance(n, m)
+			if(d2 > 0){
+				if (matrix[d2]) {
+					matrix[d2] += 1
 				} else {
-					matrix[d] = 1
+					matrix[d2] = 1
 				}
+			}
+			if (d > 0 && d != Infinity) {
+				// if (matrix[d]) {
+				// 	matrix[d] += 1
+				// } else {
+				// 	matrix[d] = 1
+				// }
 
 				if (jSpheres[id][d]) {
 					jSpheres[id][d] += 1
@@ -43,6 +52,9 @@ function distanceMatrix(weight) {
 function globalEntropy1(matrix) {
 	let e = 0
 	let n = cy.nodes().length;
+	if(n===0){
+		return 0;
+	}
 	let ns = n * n
 	for (let i of Object.values(matrix)) {
 		// tmp = 2 * i / ns

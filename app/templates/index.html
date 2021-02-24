@@ -42,10 +42,10 @@
     <div class="col-md-9">
           <div id="workspace-graph">
             <div class="viewer-graph__toolbar">
-                <button id="unselect-view" class="viewer-graph__toolbar-item btn">Graph View</button>
-                <!-- <button id="select-node" class="viewer-graph__toolbar-item btn">Select Nodes</button>
-                <button id="select-cluster" class="viewer-graph__toolbar-item btn">Select Clusters</button>
-                <button id="select-path" class="viewer-graph__toolbar-item btn">Select Path</button> -->
+                <button id="graph_view" class="viewer-graph__toolbar-item btn">Graph View</button>
+                <button id="scatter_matrix_view" class="viewer-graph__toolbar-item btn">Scatter Matrix View</button>
+                <!-- <button id="select-cluster" class="viewer-graph__toolbar-item btn">Select Clusters</button> -->
+                <!-- <button id="select-path" class="viewer-graph__toolbar-item btn">Select Path</button> -->
             </div>
             <div class="viewer-graph__graph" id="graphSVG-container">
                 <!-- <svg id="graphSVG"></svg> -->
@@ -171,7 +171,7 @@
                   <div class="col-sm-10" id="color-function-values-container"> 
                     <select class="custom-select"  name="color_function_values" id="color_function_values">
                       <option>Entropy: Distance Matrix</option>
-                      <option>Entropy: Wiener Index</option>
+                      <!-- <option>Entropy: Wiener Index</option> -->
                       <option>Entropy: Adjacent Matrix</option>
                       <option>0-Dim Homology</option>
                     </select>
@@ -199,6 +199,14 @@
                       </div>
                   </form>
                   </div>
+              </div>
+              <div class="row">
+                <div class="col-1">
+                    <input type="checkbox" id="entropy_values" class="customCheckBox"> 
+                </div>
+                <div class="col-10">
+                    <label>Show <a class="group-title">values</a></label>
+                </div>
               </div>
               <svg width="0" height="0" id="color-legend-svg"></svg>
             </div>

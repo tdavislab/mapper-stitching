@@ -1,6 +1,7 @@
 * {
   color: #333;
-  font-family: Roboto,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  /* font-family: Roboto,"Helvetica Neue",Helvetica,Arial,sans-serif; */
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
   font-size: 14px;
   text-align: left;
 }
@@ -9,6 +10,12 @@ body {
     background-color: rgb(236,241,245);
     margin:0;
     padding:0;
+}
+
+h4 {
+  color:rgb(51,54,57);
+  font-size:18px;
+  font-weight: bold;
 }
 
 div.tooltip {
@@ -24,6 +31,15 @@ div.tooltip {
     pointer-events: none;
 }
 
+.entropy_value_text{
+  font-size: 12px;
+}
+
+button.selected {
+  /* background: rgb(222,225,230); */
+  background: black;
+}
+
 #workspace-graph {
     /* height: 700px; */
     height: 91vh;
@@ -34,6 +50,14 @@ div.tooltip {
     -moz-box-shadow: 1px 1px 2px 1px rgba(221, 221, 221, 0.7);
     box-shadow: 1px 1px 2px 1px rgba(221, 221, 221, 0.7);
 }
+
+.column_title {
+  /* font-family: sans-serif; */
+  /* font-weight: bold; */
+  /* padding: 0px 10px; */
+  text-align: center;
+}
+
 
 .graph-container {
   background-color: rgb(236,241,245);
@@ -482,4 +506,22 @@ button.selected {
 
 .select-items div:hover, .same-as-selected {
   background-color: rgba(0, 0, 0, 0.1);
+}
+
+.rotated_text {
+  /* Abs positioning makes it not take up vert space */
+  -webkit-transform: rotate(270deg);
+  -webkit-transform-origin: left top;
+  -moz-transform: rotate(270deg);
+  -moz-transform-origin: left top;
+  -ms-transform: rotate(270deg);
+  -ms-transform-origin: left top;
+  -o-transform: rotate(270deg);
+  -o-transform-origin: left top;
+  transform: rotate(270deg);
+  transform-origin: left top;
+
+    /* position: absolute; */
+    /* top: 0; */
+    /* left: 100%; */
 }
