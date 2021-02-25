@@ -565,9 +565,9 @@ class Graph{
                     let t = nodes[edge.target - 1].vertices;
                     t = new Set(t)
                     let intersection = setIntersection(s, t)
-                    console.log(intersection)
+                    // console.log(intersection)
                     let jaccardIndex = 1 - intersection.size / (s.length + t.size - intersection.size);
-                    console.log(jaccardIndex)
+                    // console.log(jaccardIndex)
                     totalWeight += jaccardIndex;
                     edge.jaccardIndex = jaccardIndex;
                     cyElements.push({data: {source: edge.source, target: edge.target,
@@ -586,7 +586,7 @@ class Graph{
             
             
 
-            console.log(mewEnt, mewEnt_uw)
+            // console.log(mewEnt, mewEnt_uw)
             
     
             cy.add(cyElements);
