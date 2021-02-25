@@ -132,6 +132,7 @@ def get_graph():
             filter_parameters['filter'] = filter_function
 
             mapper_result = run_mapper(data, selected_cols, interval, overlap, eps, min_samples, filter_function, filter_parameters)
+            mapper_result['ph0'] = compute_ph0(mapper_result)
             # if len(categorical_cols) > 0:
             #     for node in mapper_result['nodes']:
             #         vertices = node['vertices']

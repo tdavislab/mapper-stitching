@@ -29,12 +29,12 @@ class Graph{
         this.subgraphs = ['sub_graphs_v1', 'sub_graphs_v2'];
 
         this.toggle_subgraph_version();
-        this.toggle_entropy_value();
         this.get_all_measures();
         this.get_color_scales();
         this.color_functions();
         this.draw_all_mappers();
         this.select_view();
+        this.toggle_entropy_value();
 
 
 		// this.graphSvg.append('text')
@@ -139,6 +139,9 @@ class Graph{
                 entropy_am = entropy_am.concat(m.entropy_am);
                 ph0 = ph0.concat(m.ph0);
             }
+            entropy_dm.push(mapper.measures.entropy_dm);
+            entropy_am.push(mapper.measures.entropy_am);
+            ph0.push(mapper.measures.ph0);
             if(mapper.vars.length > 1){
                 for(let v in mapper[this.subgraph_version].measures){
                     let md = mapper[this.subgraph_version].measures_diff[v];
@@ -146,6 +149,9 @@ class Graph{
                     entropy_wi_diff = entropy_wi_diff.concat(md.entropy_wi);
                     entropy_am_diff = entropy_am_diff.concat(md.entropy_am);
                     ph0_diff = ph0_diff.concat(md.ph0);
+                    entropy_dm_diff.push(mapper.measures_diff[v].entropy_dm);
+                    entropy_am_diff.push(mapper.measures_diff[v].entropy_am);
+                    ph0_diff.push(mapper.measures_diff[v].ph0);
                 }
                 
             }
@@ -172,7 +178,8 @@ class Graph{
             return d3.interpolateOrRd(t+dt);
             })
             .domain(entropy_am_range);
-        let ph0_scale = d3.scaleOrdinal(d3.schemeReds[Math.ceil(Math.max(...ph0))]);
+        let ph0_val = Math.max(ph0_range[1] - ph0_range[0], 3);
+        let ph0_scale = d3.scaleOrdinal(d3.schemeReds[ph0_val]);
         this.ph0_scale_dict = {};
         for(let i=1; i<=Math.ceil(Math.max(...ph0)); i++){
             this.ph0_scale_dict[i] = ph0_scale(i);
@@ -432,33 +439,20 @@ class Graph{
 
     get_all_measures(){
         this.all_mappers.forEach(mapper=>{
+            // compute global entropy
+            let mapper_measures = this.compute_entropy([mapper.mapper]);
+            mapper.measures = {'entropy_am':mapper_measures.entropy_am, 'entropy_dm': mapper_measures.entropy_dm};
+            mapper.measures.ph0 = mapper.mapper.ph0.length;
             this.subgraphs.forEach(subg=>{
                 mapper[subg].measures = {};
-                if(mapper.vars.length === 1){
-                    let v = mapper.vars[0];
-                    let xdata = Object.values(this.raw_data[v]);
-                    let ydata = Object.values(this.raw_data[v]);
-                    mapper[subg].measures[v] = this.compute_entropy(mapper[subg][v], xdata, ydata);
+                mapper.vars.forEach(v=>{
+                    mapper[subg].measures[v] = this.compute_entropy(mapper[subg][v]);
                     mapper[subg].measures[v].ph0 = [];
                     mapper[subg][v].forEach(subg_v=>{
                         mapper[subg].measures[v].ph0.push(subg_v.ph0.length);
                     });
-                } else{ // mapper.vars.length === 2
-                    let v1 = mapper.vars[0];
-                    let v2 = mapper.vars[1];
-                    let xdata = Object.values(this.raw_data[v1]);
-                    let ydata = Object.values(this.raw_data[v2]);
-                    mapper[subg].measures[v1] = this.compute_entropy(mapper[subg][v1], xdata, ydata);
-                    mapper[subg].measures[v2] = this.compute_entropy(mapper[subg][v2], ydata, xdata);
-                    mapper[subg].measures[v1].ph0 = [];
-                    mapper[subg][v1].forEach(subg_v1=>{
-                        mapper[subg].measures[v1].ph0.push(subg_v1.ph0.length);
-                    });
-                    mapper[subg].measures[v2].ph0 = [];
-                    mapper[subg][v2].forEach(subg_v2=>{
-                        mapper[subg].measures[v2].ph0.push(subg_v2.ph0.length);
-                    });
-                }
+                })
+                
             })            
         }) 
         // compute LED / LHD
@@ -473,22 +467,47 @@ class Graph{
             }
         })
         d2_mappers.forEach(mapper=>{
+            // global entropy diff
             let col1 = mapper.vars[0];
             let col2 = mapper.vars[1];
+            let mapper_col1 = d1_mapper_dict[col1];
+            let mapper_col2 = d1_mapper_dict[col2];
+            mapper.measures_diff = {};
+            mapper.measures_diff[col1] = {};
+            mapper.measures_diff[col2] = {};
+            for(let ms in this.entropy_label){
+                if(ms!="entropy_wi"){
+                    if(ms === "ph0"){
+                        mapper.measures_diff[col1][ms] = parseInt(mapper.measures[ms] - mapper_col1.measures[ms]);
+                        mapper.measures_diff[col2][ms] = parseInt(mapper.measures[ms] - mapper_col2.measures[ms]);
+                    } else{
+                        mapper.measures_diff[col1][ms] = f(mapper.measures[ms] - mapper_col1.measures[ms]);
+                        mapper.measures_diff[col2][ms] = f(mapper.measures[ms] - mapper_col2.measures[ms]);
+                    }
+                    
+                }
+            }
+
             this.subgraphs.forEach(subg=>{
                 mapper[subg].measures_diff = {};
                 mapper[subg].measures_diff[col1] = {};
                 mapper[subg].measures_diff[col2] = {};
-                let mapper_col1 = d1_mapper_dict[col1];
-                let mapper_col2 = d1_mapper_dict[col2];
+                
                 for(let ms in this.entropy_label){
                     mapper[subg].measures_diff[col1][ms] = [];
                     mapper[subg].measures_diff[col2][ms] = [];
                     for(let i=0; i<mapper[subg][col1].length; i++){ // length = # intervals
-                        let diff1 = f(parseFloat(mapper[subg].measures[col1][ms][i]) - parseFloat(mapper_col1[subg].measures[col1][ms][i]));
-                        mapper[subg].measures_diff[col1][ms].push(diff1);
-                        let diff2 = f(parseFloat(mapper[subg].measures[col2][ms][i]) - parseFloat(mapper_col2[subg].measures[col2][ms][i]));
-                        mapper[subg].measures_diff[col2][ms].push(diff2);
+                        if(ms==="ph0"){
+                            let diff1 = parseInt(mapper[subg].measures[col1][ms][i]) - parseFloat(mapper_col1[subg].measures[col1][ms][i]);
+                            mapper[subg].measures_diff[col1][ms].push(diff1);
+                            let diff2 = parseInt(mapper[subg].measures[col2][ms][i]) - parseFloat(mapper_col2[subg].measures[col2][ms][i]);
+                            mapper[subg].measures_diff[col2][ms].push(diff2);
+                        } else {
+                            let diff1 = f(parseFloat(mapper[subg].measures[col1][ms][i]) - parseFloat(mapper_col1[subg].measures[col1][ms][i]));
+                            mapper[subg].measures_diff[col1][ms].push(diff1);
+                            let diff2 = f(parseFloat(mapper[subg].measures[col2][ms][i]) - parseFloat(mapper_col2[subg].measures[col2][ms][i]));
+                            mapper[subg].measures_diff[col2][ms].push(diff2);
+                        }
                     }
                 }
                 
@@ -498,7 +517,7 @@ class Graph{
 
     }
 
-    compute_entropy(sub_graph, xdata, ydata){
+    compute_entropy(sub_graph){
         let entropies = {'entropy_dm':[], 'entropy_wi':[], 'entropy_am':[]};
         for(let i=0; i<sub_graph.length; i++){
             // let nodes = sub_graph[i].nodes.slice(0);
@@ -528,23 +547,27 @@ class Graph{
             let cyElements = []
 
             for (let node of nodes) {
-                let pointSet = new Set(node.vertices);
-                let x = xdata.filter((d, i) => pointSet.has(i));
-                let y = ydata.filter((d, i) => pointSet.has(i));
-                let c = corr(x,y);
-                node.corr = Math.abs(c);
+                // let pointSet = new Set(node.vertices);
+                // let x = xdata.filter((d, i) => pointSet.has(i));
+                // let y = ydata.filter((d, i) => pointSet.has(i));
+                // let c = corr(x,y);
+                // node.corr = Math.abs(c);
                 cyElements.push({data: {id: node.id}})
             }
     
             var mewEnt = 0;
             var totalWeight = 0;
+            var mewEnt_uw = 0; // unweighted
+            var totalEdge = links.length;
             if(links.length > 0){
                 for (let edge of links) {
                     let s = nodes[edge.source - 1].vertices;
                     let t = nodes[edge.target - 1].vertices;
                     t = new Set(t)
                     let intersection = setIntersection(s, t)
+                    console.log(intersection)
                     let jaccardIndex = 1 - intersection.size / (s.length + t.size - intersection.size);
+                    console.log(jaccardIndex)
                     totalWeight += jaccardIndex;
                     edge.jaccardIndex = jaccardIndex;
                     cyElements.push({data: {source: edge.source, target: edge.target,
@@ -552,10 +575,18 @@ class Graph{
                 }
                 for (let edge of links) {
                     let jaccardIndex = edge.jaccardIndex / totalWeight;
-                    if (jaccardIndex && totalWeight)
+                    if (jaccardIndex && totalWeight){
                         mewEnt += jaccardIndex * Math.log(jaccardIndex);
+                    }
+                    mewEnt_uw += 1/totalEdge * Math.log(1/totalEdge)
                 }
             }
+            // console.log(links)
+
+            
+            
+
+            console.log(mewEnt, mewEnt_uw)
             
     
             cy.add(cyElements);
@@ -580,6 +611,7 @@ class Graph{
             entropies['entropy_dm'].push(f(ge1));
             entropies['entropy_wi'].push(f(ge2));
             entropies['entropy_am'].push(f(-mewEnt));
+            // entropies['entropy_am'].push(f(-mewEnt_uw));
         }
         return entropies;
     }
@@ -589,7 +621,33 @@ class Graph{
         let n =  entropy.length;
         let bar_width = this.graph_width/20;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-6*bar_width}, ${this.graph_height/4})`);
+        
+        // draw global entropy
+        entropy_g.append('text')
+            .attr("transform", `translate(${this.graph_width-5*bar_width}, ${bar_height+8})`)
+            .text(()=>{
+                if(this.measure_id === "ph0"){
+                    return "H";
+                } else {
+                    return "E";
+                }
+            });
+        let ge_g = entropy_g.append("g") //global entropy group
+            .attr("transform", `translate(${this.graph_width-6*bar_width}, ${bar_height+16})`);
+        ge_g.append("rect")
+            .attr("transform", `translate(${bar_width}, 0)`)
+            .attr("width", bar_width)
+            .attr("height", bar_height)
+            .attr("fill", this.measures_color_scales[this.measure_id](mapper.measures[this.measure_id]))
+            .attr("stroke", "grey");
+        ge_g.append('text')
+            .classed("entropy_value_text", true)
+            .attr("x", -bar_width*0.5)
+            .attr("y", bar_height*2/3)
+            .text(mapper.measures[this.measure_id])
+            .style("visibility", "hidden");
+
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-6*bar_width}, ${Math.max(this.graph_height/4, 3*bar_height+24)})`);
         
         eg.append("text")
             .attr("x", bar_width)
@@ -677,12 +735,44 @@ class Graph{
         // }
     }
 
-    draw_entropy_diff(g, entropy_diff){
+    draw_entropy_diff(g, entropy_diff, mapper, col){
         let entropy_g = d3.select("#graph"+g+"_entropy");
         let n =  entropy_diff.length;
         let bar_width = this.graph_width/20;
         let bar_height = Math.min(this.graph_height/(2*n), 20);
-        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-5*bar_width}, ${this.graph_height/4})`);
+
+        // draw global entropy difference
+        entropy_g.append('text')
+            .attr("transform", `translate(${this.graph_width-4*bar_width}, ${bar_height+8})`)
+            .text(()=>{
+                if(this.measure_id === "ph0"){
+                    return "HD";
+                } else {
+                    return "ED";
+                }
+            });
+        let ge_g = entropy_g.append("g") //global entropy group
+            .attr("transform", `translate(${this.graph_width-5*bar_width}, ${bar_height+16})`);
+        ge_g.append("rect")
+            .attr("transform", `translate(${bar_width}, 0)`)
+            .attr("width", bar_width)
+            .attr("height", bar_height)
+            .attr("fill", d=>{
+                if(this.measure_id==="ph0"){
+                    return this.ph0_diff_scale_dict[parseInt(mapper.measures_diff[col][this.measure_id])];
+                } else{
+                    return this.measures_diff_color_scales[this.measure_id](mapper.measures_diff[col][this.measure_id]);
+                }
+            })
+            .attr("stroke", "grey");
+        ge_g.append('text')
+            .classed("entropy_value_text", true)
+            .attr("x", bar_width*7/3)
+            .attr("y", bar_height*2/3)
+            .text(mapper.measures_diff[col][this.measure_id])
+            .style("visibility", "hidden");
+
+        let eg = entropy_g.append("g").attr("transform", `translate(${this.graph_width-5*bar_width}, ${Math.max(this.graph_height/4, 3*bar_height+24)})`);
 
         eg.append("text")
             .attr("x", bar_width+5)
@@ -960,7 +1050,7 @@ class Graph{
             this.draw_entropy(g, entropy, mapper, col1);    
             if(col1 != col2){
                 let entropy_diff = mapper[this.subgraph_version].measures_diff[col1][this.measure_id]
-                this.draw_entropy_diff(g, entropy_diff);
+                this.draw_entropy_diff(g, entropy_diff, mapper, col1);
             }
         })
 
@@ -1303,7 +1393,7 @@ class Graph{
             .attr("height", rect_height)
             .attr("width",rect_width)
             .attr("fill", d=>d.value)
-            .style("opacity", 0.8);
+            // .style("opacity", 0.8);
 
         lg.append("text")
             .attr("x", rect_width+margin*3)
