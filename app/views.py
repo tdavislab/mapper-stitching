@@ -133,6 +133,7 @@ def get_graph():
 
             mapper_result = run_mapper(data, selected_cols, interval, overlap, eps, min_samples, filter_function, filter_parameters)
             mapper_result['ph0'] = compute_ph0(mapper_result)
+            mapper_result['ph1'] = compute_ph1(mapper_result)
             # if len(categorical_cols) > 0:
             #     for node in mapper_result['nodes']:
             #         vertices = node['vertices']
@@ -208,6 +209,25 @@ def run_mapper(data_array, col_names, interval, overlap, dbscan_eps, dbscan_min_
 def _call_kmapper(data, col_names, interval, overlap, eps, min_samples, filter_function, filter_parameters=None):
     print(filter_parameters)
     mapper = KeplerMapper()
+    # col_names = ['GrowthRate']
+    # col_names = ['215121_x_at', '211430_s_at', '209138_x_at', 'AFFX-r2-P1-cre-3_at',
+    #    '214677_x_at', '221651_x_at', '221671_x_at', '217022_s_at',
+    #    'AFFX-hum_alu_at', 'AFFX-r2-P1-cre-5_at']
+#     info_cols = ['age','chemo',
+#  'hormonal',
+#  'amputation',
+#  'histtype',
+#  'diam',
+#  'posnodes',
+#  'grade',
+#  'angioinv',
+#  'lymphinfil',
+#  'barcode']
+
+#     with open(APP_STATIC+"/uploads/cols_info.json") as f:
+#         cols_dict = json.load(f)
+#     col_names = cols_dict['cols_numerical']
+#     col_names = [col for col in col_names if col not in info_cols]
     if len(col_names) == 1:
         data_new = np.array(data[col_names[0]]).reshape(-1,1)
     else:
@@ -225,8 +245,6 @@ def _call_kmapper(data, col_names, interval, overlap, eps, min_samples, filter_f
         lens = np.concatenate((lens[0], lens[1]), axis=1)
 
     graph, cover_centers, cover_radius = mapper.map_parallel(lens, data_new, clusterer=cluster.DBSCAN(eps=eps, min_samples=min_samples), cover=Cover(n_cubes=interval, perc_overlap=overlap))
-    print("centers", cover_centers)
-    print("radius", cover_radius)
     cover_centers_new = [list(cover_centers[i]) for i in range(len(cover_centers))]
     cover_centers_new = np.array(cover_centers_new)
     cover_radius_new = list(cover_radius)
@@ -387,6 +405,7 @@ def get_subgraph_v1(col, col_name, mapper_graph):
     # compute dim0 PH for subgraphs
     for subgraph in sub_graphs:
         subgraph['ph0'] = compute_ph0(subgraph)
+        subgraph['ph1'] = compute_ph1(subgraph)
 
     return sub_graphs
 
@@ -445,13 +464,10 @@ def get_subgraph_v2(col, col_name, mapper_graph):
             node_ids.append(node['id'])
         for link in mapper_graph['links']:
             if str(link['source']) in node_ids and str(link['target']) in node_ids:
-                print("new link",link)
                 link_id = str(link['source'])+"-"+str(link['target'])
                 if link_id not in links_idx[i]:
                     sub_graphs[i]['links'].append(link)
                     links_idx[i].append(link_id)
-    print(nodes_idx)
-    print(links_idx)
 
     # add subgroup info to nodes
     for i in range(len(mapper_graph['nodes'])):
@@ -461,6 +477,7 @@ def get_subgraph_v2(col, col_name, mapper_graph):
     # compute dim0 PH for subgraphs
     for subgraph in sub_graphs:
         subgraph['ph0'] = compute_ph0(subgraph)
+        subgraph['ph1'] = compute_ph1(subgraph)
 
     return sub_graphs
 
@@ -485,6 +502,30 @@ def compute_ph0(graph_data):
             components = [components[i] for i in range(len(components)) if i not in [source_cc_idx, target_cc_idx]]
             components.append(source_cc + target_cc)
     return components
+
+def compute_ph1(graph_data):
+    nodes = graph_data['nodes']
+    links = graph_data['links']
+    with open(APP_STATIC+"/uploads/graph.txt", "w") as f:
+        f.write("1\n")
+        for node in nodes:
+            node_id = str(node['id'])
+            f.write("0 "+node_id+" 1\n")
+        for link in links:
+            source_id = str(link['source'])
+            target_id = str(link['target'])
+            f.write("1 "+source_id+" "+target_id+" 1\n")
+    os.system(APP_STATIC+"/vendors/perseusMac nmfsimtop "+APP_STATIC+"/uploads/graph.txt "+APP_STATIC+"/uploads/graph_output")
+    with open(APP_STATIC+"/uploads/graph_output_betti.txt") as f:
+        ph1 = f.readlines()
+        ph1 = ph1[1].split(" ")[3]
+        if ph1 == '':
+            ph1 = 0
+        else:
+            ph1 = int(ph1)
+        print(ph1)
+
+    return ph1
 
 def find_cc_index(components, vertex_id):
     for i in range(len(components)):

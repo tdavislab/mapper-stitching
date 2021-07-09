@@ -24,8 +24,8 @@ class Graph{
         "Green, Blue":["green", "blue"]};
         
 
-        this.entropy_label = {"entropy_dm": "DM", "entropy_wi": "WI", "entropy_am":"AM", "ph0":"Dim0 PH"};
-        this.measures_label2id = {"Entropy: Distance Matrix": "entropy_dm", "Entropy: Wiener Index":"entropy_wi", "Entropy: Adjacent Matrix":"entropy_am", "0-Dim Homology":"ph0"};
+        this.entropy_label = {"entropy_dm": "DM", "entropy_wi": "WI", "entropy_am":"AM", "ph0":"Dim0 PH", "ph1":"Dim1 PH"};
+        this.measures_label2id = {"Entropy: Distance Matrix": "entropy_dm", "Entropy: Wiener Index":"entropy_wi", "Entropy: Adjacent Matrix":"entropy_am", "0-Dim Homology":"ph0", "1-Dim Homology":"ph1"};
         this.subgraphs = ['sub_graphs_v1', 'sub_graphs_v2'];
 
         this.toggle_subgraph_version();
@@ -124,12 +124,14 @@ class Graph{
         let entropy_dm = [];
         let entropy_wi = [];
         let entropy_am = [];
-        let ph0 = []
+        let ph0 = [];
+        let ph1 = [];
 
         let entropy_dm_diff = [];
         let entropy_wi_diff = [];
         let entropy_am_diff = [];
-        let ph0_diff = []
+        let ph0_diff = [];
+        let ph1_diff = [];
 
         this.all_mappers.forEach(mapper=>{
             for(let v in mapper[this.subgraph_version].measures){
@@ -138,10 +140,12 @@ class Graph{
                 entropy_wi = entropy_wi.concat(m.entropy_wi);
                 entropy_am = entropy_am.concat(m.entropy_am);
                 ph0 = ph0.concat(m.ph0);
+                ph1 = ph1.concat(m.ph1);
             }
             entropy_dm.push(mapper.measures.entropy_dm);
             entropy_am.push(mapper.measures.entropy_am);
             ph0.push(mapper.measures.ph0);
+            ph1.push(mapper.measures.ph1);
             if(mapper.vars.length > 1){
                 for(let v in mapper[this.subgraph_version].measures){
                     let md = mapper[this.subgraph_version].measures_diff[v];
@@ -149,9 +153,11 @@ class Graph{
                     entropy_wi_diff = entropy_wi_diff.concat(md.entropy_wi);
                     entropy_am_diff = entropy_am_diff.concat(md.entropy_am);
                     ph0_diff = ph0_diff.concat(md.ph0);
+                    ph1_diff = ph1_diff.concat(md.ph1);
                     entropy_dm_diff.push(mapper.measures_diff[v].entropy_dm);
                     entropy_am_diff.push(mapper.measures_diff[v].entropy_am);
                     ph0_diff.push(mapper.measures_diff[v].ph0);
+                    ph1_diff.push(mapper.measures_diff[v].ph1);
                 }
                 
             }
@@ -163,6 +169,9 @@ class Graph{
         let entropy_wi_range = [Math.floor(Math.min(...entropy_wi)), Math.ceil(Math.max(...entropy_wi))];
         let entropy_am_range = [Math.floor(Math.min(...entropy_am)*10)/10, Math.ceil(Math.max(...entropy_am))+0.5];
         let ph0_range = [Math.floor(Math.min(...ph0)), Math.ceil(Math.max(...ph0))];
+        let ph1_range = [0, Math.ceil(Math.max(...ph1))];
+
+        console.log(ph1_range)
 
         // let dm_scale = d3.scaleSequential(d3.interpolateOrRd).domain(entropy_dm_range);
         let dm_scale = d3.scaleSequential(function(t){
@@ -179,19 +188,33 @@ class Graph{
             })
             .domain(entropy_am_range);
         let ph0_val = Math.max(ph0_range[1] - ph0_range[0], 3);
-        let ph0_scale = d3.scaleOrdinal(d3.schemeReds[ph0_val]);
+        // let ph1_val = Math.max(ph1_range[1] - ph1_range[0], 3);
+        let ph0_scale = d3.scaleSequential(d3.interpolateOrRd).domain(ph0_range);
+        // d3.scaleOrdinal(d3.schemeReds[ph0_val]);
+        // let ph1_scale = d3.scaleOrdinal(d3.schemeReds[ph1_val]);
+        let ph1_scale = d3.scaleSequential(d3.interpolateOrRd).domain(ph1_range);
         this.ph0_scale_dict = {};
-        for(let i=1; i<=Math.ceil(Math.max(...ph0)); i++){
+        this.ph1_scale_dict = {};
+       
+        for(let i=0; i<=Math.ceil(Math.max(...ph0)); i++){
             this.ph0_scale_dict[i] = ph0_scale(i);
         }
+
+        for(let i=0; i<=Math.ceil(Math.max(...ph1)); i++){
+            this.ph1_scale_dict[i] = ph1_scale(i);
+        }
+        // this.ph0_scale_dict[1] = "#fc9272"
+        // this.ph0_scale_dict[2] = "#de2d26"
+        console.log(this.ph0_scale_dict)
         // let ph0_scale = d3.scaleSequential(d3.interpolateOrRd).domain(ph0_range);
         // let ph0_scale = d3.scaleOrdinal(d3.schemeReds[ph0_range[1]]).domain(ph0_range);
-        this.measures_color_scales = {"entropy_dm": dm_scale, "entropy_wi": wi_scale, "entropy_am": am_scale, "ph0":ph0_scale};
+        this.measures_color_scales = {"entropy_dm": dm_scale, "entropy_wi": wi_scale, "entropy_am": am_scale, "ph0":ph0_scale, "ph1":ph1_scale};
 
         let entropy_dm_diff_range = [Math.floor(Math.min(...entropy_dm_diff)*10)/10, Math.ceil(Math.max(...entropy_dm_diff))+0.5];
         let entropy_wi_diff_range = [Math.floor(Math.min(...entropy_wi_diff)), Math.ceil(Math.max(...entropy_wi_diff))];
         let entropy_am_diff_range = [Math.floor(Math.min(...entropy_am_diff)*10)/10, Math.ceil(Math.max(...entropy_am_diff))+0.5];
         let ph0_diff_range = [Math.floor(Math.min(...ph0_diff)), Math.ceil(Math.max(...ph0_diff))];
+        let ph1_diff_range = [Math.floor(Math.min(...ph1_diff)), Math.ceil(Math.max(...ph1_diff))];
 
         let dm_diff_scale = d3.scaleSequential(function(t){
             // let dt = Math.min((entropy_dm_diff_range[1] - entropy_dm_diff_range[0])/3, 0.3);
@@ -208,13 +231,24 @@ class Graph{
             .domain(entropy_am_diff_range);
         
         let ph0_diff_val = Math.max(ph0_diff_range[1] - ph0_diff_range[0], 3);
+        let ph1_diff_val = Math.max(ph1_diff_range[1] - ph1_diff_range[0], 3);
 
-        let ph0_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph0_diff_val]);
+        // let ph0_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph0_diff_val]);
+        let ph0_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(ph0_diff_range);
+        // let ph1_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph1_diff_val]);
+        let ph1_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(ph1_diff_range);
+
         this.ph0_diff_scale_dict = {};
         for(let i=Math.floor(Math.min(...ph0_diff)); i<=Math.ceil(Math.max(...ph0_diff)); i++){
-            this.ph0_diff_scale_dict[i] = ph0_diff_scale(i+1-Math.floor(Math.min(...ph0_diff)));
+            // this.ph0_diff_scale_dict[i] = ph0_diff_scale(i+2-Math.floor(Math.min(...ph0_diff)));
+            this.ph0_diff_scale_dict[i] = ph0_diff_scale(i-Math.floor(Math.min(...ph0_diff)));
         }
-        this.measures_diff_color_scales = {"entropy_dm": dm_diff_scale, "entropy_wi": wi_diff_scale, "entropy_am": am_diff_scale, "ph0":ph0_diff_scale};
+        this.ph1_diff_scale_dict = {};
+        for(let i=Math.floor(Math.min(...ph1_diff)); i<=Math.ceil(Math.max(...ph1_diff)); i++){
+            // this.ph1_diff_scale_dict[i] = ph1_diff_scale(i+2-Math.floor(Math.min(...ph1_diff)));
+            this.ph1_diff_scale_dict[i] = ph1_diff_scale(i-Math.floor(Math.min(...ph1_diff)));
+        }
+        this.measures_diff_color_scales = {"entropy_dm": dm_diff_scale, "entropy_wi": wi_diff_scale, "entropy_am": am_diff_scale, "ph0":ph0_diff_scale, "ph1":ph1_diff_scale};
 
     }
 
@@ -225,14 +259,22 @@ class Graph{
         // this.draw_color_legend(this.measure_id);
         if(this.measure_id === "ph0"){
             this.draw_color_legend_categorical(this.ph0_scale_dict, this.ph0_diff_scale_dict);
-        } else{
+        } 
+        // else if(this.measure_id === "ph1"){
+        //     this.draw_color_legend_categorical(this.ph1_scale_dict, this.ph1_diff_scale_dict);
+        // }
+        else{
             this.draw_color_legend(this.measure_id);   
         }
         value_dropdown.onchange = function(){
             that.measure_id = that.measures_label2id[value_dropdown.options[value_dropdown.selectedIndex].text];
             if(that.measure_id === "ph0"){
                 that.draw_color_legend_categorical(that.ph0_scale_dict, that.ph0_diff_scale_dict);
-            } else{
+            } 
+            // else if(that.measure_id === "ph1"){
+            //     that.draw_color_legend_categorical(that.ph1_scale_dict, that.ph1_diff_scale_dict);
+            // }
+            else{
                 that.draw_color_legend(that.measure_id);   
             }
             that.draw_all_mappers();
@@ -253,6 +295,7 @@ class Graph{
     }
 
     draw_color_legend(color_val){
+        console.log(color_val)
         $('#color-legend-svg').remove();
         $('#block_body-inner_color').append('<svg width="0" height="0" id="color-legend-svg"></svg>');
         let color_scale = this.measures_color_scales[color_val];
@@ -276,7 +319,7 @@ class Graph{
         svg.append("text")
                 .attr("transform", `translate(0,${40})`)
             .text(()=>{
-                if(color_val === "ph0"){
+                if(color_val === "ph0" || color_val === "ph1"){
                     return "LH";
                 } else {
                     return "LE";
@@ -304,7 +347,7 @@ class Graph{
         svg.append("text")
                 .attr("transform", `translate(0,${60+40})`)
             .text(()=>{
-                if(color_val === "ph0"){
+                if(color_val === "ph0" || color_val === "ph1"){
                     return "LHD";
                 } else {
                     return "LED";
@@ -410,7 +453,7 @@ class Graph{
             this.col_index[c] = i; 
             this.col_index_reverse[i] = c;
         });
-        console.log("col index", this.col_index)
+        // console.log("col index", this.col_index)
 
         this.graph_width = graph_width;
         this.graph_height = graph_height;
@@ -443,13 +486,16 @@ class Graph{
             let mapper_measures = this.compute_entropy([mapper.mapper]);
             mapper.measures = {'entropy_am':mapper_measures.entropy_am, 'entropy_dm': mapper_measures.entropy_dm};
             mapper.measures.ph0 = mapper.mapper.ph0.length;
+            mapper.measures.ph1 = mapper.mapper.ph1;
             this.subgraphs.forEach(subg=>{
                 mapper[subg].measures = {};
                 mapper.vars.forEach(v=>{
                     mapper[subg].measures[v] = this.compute_entropy(mapper[subg][v]);
                     mapper[subg].measures[v].ph0 = [];
+                    mapper[subg].measures[v].ph1 = [];
                     mapper[subg][v].forEach(subg_v=>{
                         mapper[subg].measures[v].ph0.push(subg_v.ph0.length);
+                        mapper[subg].measures[v].ph1.push(subg_v.ph1);
                     });
                 })
                 
@@ -477,7 +523,7 @@ class Graph{
             mapper.measures_diff[col2] = {};
             for(let ms in this.entropy_label){
                 if(ms!="entropy_wi"){
-                    if(ms === "ph0"){
+                    if(ms === "ph0" || ms === "ph1"){
                         mapper.measures_diff[col1][ms] = parseInt(mapper.measures[ms] - mapper_col1.measures[ms]);
                         mapper.measures_diff[col2][ms] = parseInt(mapper.measures[ms] - mapper_col2.measures[ms]);
                     } else{
@@ -497,7 +543,7 @@ class Graph{
                     mapper[subg].measures_diff[col1][ms] = [];
                     mapper[subg].measures_diff[col2][ms] = [];
                     for(let i=0; i<mapper[subg][col1].length; i++){ // length = # intervals
-                        if(ms==="ph0"){
+                        if(ms==="ph0" || ms==="ph1"){
                             let diff1 = parseInt(mapper[subg].measures[col1][ms][i]) - parseFloat(mapper_col1[subg].measures[col1][ms][i]);
                             mapper[subg].measures_diff[col1][ms].push(diff1);
                             let diff2 = parseInt(mapper[subg].measures[col2][ms][i]) - parseFloat(mapper_col2[subg].measures[col2][ms][i]);
@@ -610,8 +656,8 @@ class Graph{
             let f = d3.format(".2f");
             entropies['entropy_dm'].push(f(ge1));
             entropies['entropy_wi'].push(f(ge2));
-            entropies['entropy_am'].push(f(-mewEnt));
-            // entropies['entropy_am'].push(f(-mewEnt_uw));
+            // entropies['entropy_am'].push(f(-mewEnt));
+            entropies['entropy_am'].push(f(-mewEnt_uw));
         }
         return entropies;
     }
@@ -626,7 +672,7 @@ class Graph{
         entropy_g.append('text')
             .attr("transform", `translate(${this.graph_width-5*bar_width}, ${bar_height+8})`)
             .text(()=>{
-                if(this.measure_id === "ph0"){
+                if(this.measure_id === "ph0" || this.measure_id === "ph1"){
                     return "H";
                 } else {
                     return "E";
@@ -638,11 +684,20 @@ class Graph{
             .attr("transform", `translate(${bar_width}, 0)`)
             .attr("width", bar_width)
             .attr("height", bar_height)
-            .attr("fill", this.measures_color_scales[this.measure_id](mapper.measures[this.measure_id]))
+            .attr("fill", d=>{
+                if(this.measure_id==="ph0"){
+                    return this.ph0_scale_dict[parseInt(mapper.measures[this.measure_id])];
+                } else if(this.measure_id === "ph1"){
+                    return this.ph1_scale_dict[parseInt(mapper.measures[this.measure_id])];
+                }
+                else{
+                    return this.measures_color_scales[this.measure_id](mapper.measures[this.measure_id]);
+                }
+            })
             .attr("stroke", "grey");
         ge_g.append('text')
             .classed("entropy_value_text", true)
-            .attr("x", -bar_width*0.5)
+            .attr("x", -bar_width*0.5-5)
             .attr("y", bar_height*2/3)
             .text(mapper.measures[this.measure_id])
             .style("visibility", "hidden");
@@ -652,7 +707,7 @@ class Graph{
         eg.append("text")
             .attr("x", bar_width)
             .text(()=>{
-                if(this.measure_id === "ph0"){
+                if(this.measure_id === "ph0" || this.measure_id === "ph1"){
                     return "LH";
                 } else {
                     return "LE";
@@ -673,7 +728,14 @@ class Graph{
             .attr("height", bar_height)
             .attr("fill", (d,i)=>{
                 if(this.map_type === "map-continuous"){
-                    return this.measures_color_scales[this.measure_id](d);
+                    if(this.measure_id==="ph0"){
+                        return this.ph0_scale_dict[parseInt(d)];
+                    } else if(this.measure_id==="ph1"){
+                        return this.ph1_scale_dict[parseInt(d)];
+                    }
+                    else{
+                        return this.measures_color_scales[this.measure_id](d);
+                    }
                 } else {
                     return mapper[this.subgraph_version].color_dict[col][i];
                 }
@@ -684,7 +746,7 @@ class Graph{
             .on("mouseout", mouseout);
         eg_g.append("text")
             .classed("entropy_value_text", true)
-            .attr("x", -bar_width*1.5)
+            .attr("x", -bar_width*1.5-5)
             .attr("y", bar_height*2/3)
             .text(d=>d)
             .style("visibility", "hidden");
@@ -745,7 +807,7 @@ class Graph{
         entropy_g.append('text')
             .attr("transform", `translate(${this.graph_width-4*bar_width}, ${bar_height+8})`)
             .text(()=>{
-                if(this.measure_id === "ph0"){
+                if(this.measure_id === "ph0" || this.measure_id === "ph1"){
                     return "HD";
                 } else {
                     return "ED";
@@ -760,7 +822,10 @@ class Graph{
             .attr("fill", d=>{
                 if(this.measure_id==="ph0"){
                     return this.ph0_diff_scale_dict[parseInt(mapper.measures_diff[col][this.measure_id])];
-                } else{
+                } else if(this.measure_id==="ph1"){
+                    return this.ph1_diff_scale_dict[parseInt(mapper.measures_diff[col][this.measure_id])];
+                }
+                else{
                     return this.measures_diff_color_scales[this.measure_id](mapper.measures_diff[col][this.measure_id]);
                 }
             })
@@ -777,7 +842,7 @@ class Graph{
         eg.append("text")
             .attr("x", bar_width+5)
             .text(()=>{
-                if(this.measure_id === "ph0"){
+                if(this.measure_id === "ph0" || this.measure_id === "ph1"){
                     return "LHD";
                 } else {
                     return "LED";
@@ -798,7 +863,10 @@ class Graph{
             .attr("fill", d=>{
                 if(this.measure_id==="ph0"){
                     return this.ph0_diff_scale_dict[parseInt(d)];
-                } else{
+                } else if(this.measure_id==="ph1"){
+                    return this.ph1_diff_scale_dict[parseInt(d)];
+                }
+                else{
                     return this.measures_diff_color_scales[this.measure_id](d);
                 }
             })
@@ -856,7 +924,7 @@ class Graph{
                     .text(col1);
             } else {
                 // draw scatter plot
-                console.log(col1, col2)
+                // console.log(col1, col2)
                 let x_val = Object.values(this.raw_data[col1]);
                 let y_val = Object.values(this.raw_data[col2]);
                 let pt_val = [];
@@ -964,7 +1032,14 @@ class Graph{
                 .attr("d", d=>arc(d))
                 .attr("fill", d=>{
                     if(this.map_type === "map-continuous"){
-                        return this.measures_color_scales[this.measure_id](mapper[this.subgraph_version]['measures'][col1][this.measure_id][d.data.idx]);
+                        if(this.measure_id==="ph0"){
+                            return this.ph0_scale_dict[parseInt(mapper[this.subgraph_version]['measures'][col1][this.measure_id][d.data.idx])];
+                        } else if(this.measure_id==="ph1"){
+                            return this.ph1_scale_dict[parseInt(mapper[this.subgraph_version]['measures'][col1][this.measure_id][d.data.idx])];
+                        }
+                        else{
+                            return this.measures_color_scales[this.measure_id](mapper[this.subgraph_version]['measures'][col1][this.measure_id][d.data.idx]);                        }
+                        
                     } else{
                         return mapper[this.subgraph_version]['color_dict'][col1][d.data.idx];
                     }
