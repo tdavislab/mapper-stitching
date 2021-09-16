@@ -43,7 +43,7 @@ Pull requests are welcomed.
 
 ## Cite
 
-Stitch Fix for Mapper and Information Gains. Bala Krishnamoorthy, Nathaniel Saul, Bei Wang. 2021.
+Stitch Fix for Mapper and Topological Gains. Youjia Zhou, Nathaniel Saul, Ilkin Safarli, Bala Krishnamoorthy, Bei Wang. 2021.
 
 
 
