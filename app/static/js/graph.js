@@ -9,6 +9,7 @@ class Graph{
         this.k = k;
         console.log(this.raw_data)
 
+
         // d3.select(".sidebar-container").style("height", this.height)
 
         // histogram SVG
@@ -233,8 +234,8 @@ class Graph{
         let ph0_diff_val = Math.max(ph0_diff_range[1] - ph0_diff_range[0], 3);
         let ph1_diff_val = Math.max(ph1_diff_range[1] - ph1_diff_range[0], 3);
 
-        // let ph0_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph0_diff_val]);
-        let ph0_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(ph0_diff_range);
+        let ph0_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph0_diff_val]);
+        // let ph0_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(ph0_diff_range);
         // let ph1_diff_scale = d3.scaleOrdinal(d3.schemeBlues[ph1_diff_val]);
         let ph1_diff_scale = d3.scaleSequential(d3.interpolatePuBu).domain(ph1_diff_range);
 
@@ -459,8 +460,12 @@ class Graph{
         this.graph_height = graph_height;
 
         if(plot_type === "mapper_graph"){
-            // let color_scale_categorical = d3.scaleOrdinal(d3.schemeCategory10);
-            let color_scale_categorical = d3.scaleOrdinal(d3.schemeTableau10);
+            // let color_scale_categorical = d3.scaleOrdinal(d3.schemeTableau10);
+            let color_scale_categorical = d3.scaleOrdinal(d3.schemePaired); // only for cylinder example
+            let color_scale_categorical_list = []
+            for(let i=0; i<10; i++){
+                color_scale_categorical_list.push(color_scale_categorical(i))
+            }
             this.all_mappers.forEach(mapper=>{
                 this.subgraphs.forEach(subg=>{
                     mapper[subg].color_dict = {};
@@ -468,6 +473,11 @@ class Graph{
                         mapper[subg].color_dict[v] = [];
                         for(let i=0; i<mapper[subg][v].length; i++){
                             mapper[subg].color_dict[v].push(color_scale_categorical(i));
+                            // if(v==="x"){
+                            //     mapper[subg].color_dict[v].push(color_scale_categorical_list[i]);
+                            // } else{
+                            //     mapper[subg].color_dict[v].push(color_scale_categorical_list[i+4]);
+                            // } // only for cylinder example
                         }
                     })
                 })
@@ -1973,7 +1983,7 @@ class Graph{
         d3.selectAll(".pie-group").remove();
         let color_categorical = d3.scaleOrdinal(d3.schemeCategory10);
         let color_dict = {};
-        let idx = 0;
+        // let idx = 0;
 
         // let that = this;
         let pie = d3.pie()

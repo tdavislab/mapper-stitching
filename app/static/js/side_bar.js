@@ -1,8 +1,10 @@
 class DataLoader{
     constructor(all_cols, categorical_cols, other_cols){
         this.all_cols = all_cols;
-        this.selected_cols = all_cols.slice(0);
-        this.selectable_cols = [];
+        // this.selected_cols = all_cols.slice(0);
+        this.selected_cols = []
+        // this.selectable_cols = [];
+        this.selectable_cols = all_cols.slice(0);
         this.categorical_cols = categorical_cols;
         this.other_cols = other_cols;
 

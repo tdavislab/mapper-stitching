@@ -210,9 +210,9 @@ def _call_kmapper(data, col_names, interval, overlap, eps, min_samples, filter_f
     print(filter_parameters)
     mapper = KeplerMapper()
     # col_names = ['GrowthRate']
-    # col_names = ['215121_x_at', '211430_s_at', '209138_x_at', 'AFFX-r2-P1-cre-3_at',
-    #    '214677_x_at', '221651_x_at', '221671_x_at', '217022_s_at',
-    #    'AFFX-hum_alu_at', 'AFFX-r2-P1-cre-5_at']
+#     col_names = ['215121_x_at', '211430_s_at', '209138_x_at', 'AFFX-r2-P1-cre-3_at',
+#        '214677_x_at', '221651_x_at', '221671_x_at', '217022_s_at',
+#        'AFFX-hum_alu_at', 'AFFX-r2-P1-cre-5_at']
 #     info_cols = ['age','chemo',
 #  'hormonal',
 #  'amputation',
@@ -227,7 +227,7 @@ def _call_kmapper(data, col_names, interval, overlap, eps, min_samples, filter_f
 #     with open(APP_STATIC+"/uploads/cols_info.json") as f:
 #         cols_dict = json.load(f)
 #     col_names = cols_dict['cols_numerical']
-#     col_names = [col for col in col_names if col not in info_cols]
+    # col_names = [col for col in col_names if col not in info_cols]
     if len(col_names) == 1:
         data_new = np.array(data[col_names[0]]).reshape(-1,1)
     else:
