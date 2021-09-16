@@ -10,7 +10,7 @@
 ## Installation
 
 ```bash
-git clone git@github.com:tdavislab/mapper-stitching.git
+git clone https://github.com/tdavislab/mapper-stitching.git
 cd mapper-stitching
 python3 run.py
 ```
